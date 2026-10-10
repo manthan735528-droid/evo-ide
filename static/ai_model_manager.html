@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI Model Manager</title>
+<style>
+:root {
+  --bg: #0b0d10; --surface: #11141a; --elev: #161a21; --elev2: #1c212a;
+  --line: #232a34; --line-soft: #1a2027; --text: #e3e9f2;
+  --text-dim: #94a2b3; --text-mute: #64707e; --primary: #3ddc97;
+  --primary-soft: rgba(61,220,151,0.12); --primary-line: rgba(61,220,151,0.32);
+  --warn: #f0a742; --warn-soft: rgba(240,167,66,0.12);
+  --danger: #f2555a; --danger-soft: rgba(242,85,90,0.12);
+  --info: #5b8def; --info-soft: rgba(91,141,239,0.12);
+  --r-sm: 4px; --r-md: 6px; --r-lg: 10px;
+  --font-ui: 'Segoe UI',system-ui,-apple-system,sans-serif;
+  --font-mono: 'JetBrains Mono','SF Mono',Consolas,monospace;
+  --fast: 140ms ease;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { min-height: 100dvh; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 13px; line-height: 1.5; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a323d; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3a4553; }
+
+.app { display: grid; grid-template-areas: "title title" "sidebar main"; grid-template-columns: 260px minmax(0,1fr); grid-template-rows: auto 1fr; min-height: 100dvh; }
+
+.titlebar { grid-area: title; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--line); gap: 12px; }
+.titlebar__brand { display: flex; align-items: center; gap: 10px; }
+.brand-badge { font-size: 10px; font-weight: 700; letter-spacing: .12em; color: var(--bg); background: var(--primary); padding: 4px 7px; border-radius: var(--r-sm); }
+.titlebar h1 { font-size: 15px; font-weight: 600; }
+.titlebar__actions { display: flex; align-items: center; gap: 8px; }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--elev); color: var(--text); font-family: var(--font-ui); font-size: 12px; font-weight: 500; cursor: pointer; transition: all var(--fast); white-space: nowrap; }
+.btn:hover:not(:disabled) { background: var(--elev2); border-color: #2e3742; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn--primary { background: var(--primary); border-color: var(--primary); color: #06281a; font-weight: 600; }
+.btn--primary:hover:not(:disabled) { background: #58e6a9; border-color: #58e6a9; }
+.btn--danger { color: var(--danger); border-color: rgba(242,85,90,.34); background: var(--danger-soft); }
+.btn--ghost { background: transparent; border-color: transparent; color: var(--text-dim); }
+.btn--ghost:hover:not(:disabled) { background: var(--elev); color: var(--text); }
+.btn--sm { height: 26px; padding: 0 10px; font-size: 11px; }
+.btn--xs { height: 22px; padding: 0 8px; font-size: 10px; }
+
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-mute); cursor: pointer; font-size: 16px; line-height: 1; transition: all var(--fast); }
+.icon-btn:hover { background: var(--elev2); color: var(--text); }
+
+.sidebar { grid-area: sidebar; display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--line); }
+.sidebar__section { padding: 12px; border-bottom: 1px solid var(--line-soft); }
+.sidebar__section:last-child { border-bottom: 0; flex: 1; }
+.sidebar__title { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-mute); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+
+.field { margin-bottom: 10px; }
+.field__label { display: block; font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
+.field__hint { font-size: 10px; color: var(--text-mute); margin-top: 2px; }
+
+input[type="text"],input[type="password"],input[type="number"],select,textarea { width: 100%; height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--elev); color: var(--text); font-family: var(--font-ui); font-size: 12px; outline: none; transition: border-color var(--fast); }
+input:focus,select:focus,textarea:focus { border-color: var(--primary-line); }
+input::placeholder { color: var(--text-mute); }
+textarea { height: auto; min-height: 60px; padding: 8px 10px; resize: vertical; font-family: var(--font-mono); font-size: 11px; line-height: 1.5; }
+select { cursor: pointer; } select option { background: var(--elev); color: var(--text); }
+
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; cursor: pointer; }
+.switch__label { font-size: 12px; color: var(--text-dim); }
+.switch__track { position: relative; width: 36px; height: 20px; background: var(--line); border-radius: 10px; transition: background var(--fast); flex-shrink: 0; }
+.switch__thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: var(--text-dim); border-radius: 50%; transition: all var(--fast); }
+.switch input { display: none; }
+.switch input:checked + .switch__track { background: var(--primary-soft); }
+.switch input:checked + .switch__track .switch__thumb { left: 18px; background: var(--primary); }
+
+.color-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.color-row input[type="color"] { width: 36px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: var(--r-sm); background: transparent; cursor: pointer; }
+.color-row span { font-family: var(--font-mono); font-size: 11px; color: var(--text-mute); }
+
+.api-list { display: flex; flex-direction: column; gap: 4px; }
+.sidebar__section::-webkit-scrollbar { width: 6px; }
+.sidebar__section::-webkit-scrollbar-track { background: transparent; }
+.sidebar__section::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+.sidebar__section::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+.api-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--r-sm); background: var(--elev); border: 1px solid transparent; cursor: pointer; transition: all var(--fast); }
+.api-item:hover { background: var(--elev2); border-color: var(--line); }
+.api-item.is-active { background: var(--primary-soft); border-color: var(--primary-line); }
+.api-item__icon { width: 28px; height: 28px; border-radius: var(--r-sm); background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.api-item__info { flex: 1; min-width: 0; }
+.api-item__name { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.api-item__url { font-family: var(--font-mono); font-size: 10px; color: var(--text-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.api-item__delete { opacity: 0; transition: opacity var(--fast); color: var(--danger); }
+.api-item:hover .api-item__delete { opacity: 1; }
+
+.main { grid-area: main; display: flex; flex-direction: column; }
+
+.conn-bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.conn-bar__field { display: flex; align-items: center; gap: 6px; }
+.conn-bar__field label { font-size: 11px; color: var(--text-mute); white-space: nowrap; }
+.conn-bar__field input,.conn-bar__field select { width: auto; min-width: 100px; max-width: 100%; }
+.conn-bar__field input.url-input { min-width: 260px; }
+.conn-bar__spacer { flex: 1; }
+
+.status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+.status-pill--ok { background: var(--primary-soft); color: var(--primary); }
+.status-pill--err { background: var(--danger-soft); color: var(--danger); }
+.status-pill--warn { background: var(--warn-soft); color: var(--warn); }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.status-dot--pulse { animation: pulse 1.1s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+.toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--line-soft); gap: 10px; }
+.toolbar__left,.toolbar__right { display: flex; align-items: center; gap: 8px; }
+.search-box { position: relative; }
+.search-box input { width: 220px; padding-left: 28px; }
+.search-box::before { content: "🔍"; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; opacity: .5; }
+
+.model-grid { padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; align-content: start; }
+
+.model-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; cursor: pointer; transition: all var(--fast); position: relative; overflow: hidden; }
+.model-card:hover { border-color: var(--primary-line); background: var(--elev); }
+.model-card.is-selected { border-color: var(--primary); background: var(--primary-soft); }
+.model-card.is-favorite::before { content: "★"; position: absolute; top: 8px; right: 10px; color: var(--warn); font-size: 14px; }
+.model-card__header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.model-card__icon { width: 36px; height: 36px; border-radius: var(--r-sm); background: var(--elev); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.model-card__title { flex: 1; min-width: 0; }
+.model-card__name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.model-card__id { font-family: var(--font-mono); font-size: 10px; color: var(--text-mute); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.model-card__tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+.tag { padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 500; }
+.tag--size { background: var(--info-soft); color: var(--info); }
+.tag--family { background: var(--primary-soft); color: var(--primary); }
+.tag--source { background: var(--elev2); color: var(--text-dim); }
+.tag--ctx { background: rgba(91, 141, 239, 0.12); color: var(--info); }
+.tag--ram { background: var(--elev2); color: var(--text-dim); }
+.tag--ram-ok { background: rgba(61, 220, 151, 0.12); color: var(--primary); }
+.tag--ram-warn { background: var(--warn-soft); color: var(--warn); }
+.model-card__actions { display: flex; gap: 6px; opacity: 0; transition: opacity var(--fast); }
+.model-card:hover .model-card__actions { opacity: 1; }
+
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-mute); text-align: center; }
+.empty-state__icon { font-size: 48px; margin-bottom: 16px; opacity: .5; }
+.empty-state__title { font-size: 16px; font-weight: 600; color: var(--text-dim); margin-bottom: 6px; }
+.empty-state__desc { font-size: 12px; max-width: 300px; line-height: 1.6; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity var(--fast); }
+.modal-overlay.is-open { opacity: 1; pointer-events: auto; }
+.modal { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); width: 90%; max-width: 520px; max-height: 85vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,.5); transform: translateY(12px); transition: transform var(--fast); }
+.modal-overlay.is-open .modal { transform: translateY(0); }
+.modal__header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line-soft); }
+.modal__header h3 { font-size: 14px; font-weight: 600; }
+.modal__body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+.modal__footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line-soft); }
+
+.toasts { position: fixed; right: 16px; bottom: 16px; z-index: 200; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { min-width: 260px; max-width: 380px; padding: 12px 14px; border-radius: var(--r-md); background: var(--elev2); border: 1px solid var(--line); border-left: 3px solid var(--primary); box-shadow: 0 8px 32px rgba(0,0,0,.4); pointer-events: auto; animation: toastIn 200ms ease; }
+.toast--error { border-left-color: var(--danger); }
+.toast--warn { border-left-color: var(--warn); }
+@keyframes toastIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+.toast__title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.toast__body { font-size: 11.5px; color: var(--text-dim); line-height: 1.5; }
+
+.selected-bar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--primary-soft); border-top: 1px solid var(--primary-line); flex-wrap: wrap; }
+.selected-bar__label { font-size: 11px; color: var(--primary); font-weight: 600; }
+.selected-bar__name { flex: 1; font-family: var(--font-mono); font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.settings-tabs { display: flex; gap: 2px; margin-bottom: 12px; border-bottom: 1px solid var(--line-soft); padding-bottom: 8px; }
+.settings-tab { padding: 6px 12px; border-radius: var(--r-sm); font-size: 11px; font-weight: 600; color: var(--text-mute); cursor: pointer; transition: all var(--fast); border: 0; background: transparent; }
+.settings-tab:hover { color: var(--text-dim); background: var(--elev); }
+.settings-tab.is-active { color: var(--primary); background: var(--primary-soft); }
+.settings-panel { display: none; }
+.settings-panel.is-active { display: block; }
+
+.preset-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.preset-btn { padding: 5px 10px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--elev); color: var(--text-dim); font-size: 11px; cursor: pointer; transition: all var(--fast); }
+.preset-btn:hover { border-color: var(--primary-line); color: var(--text); }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; grid-template-areas: "title" "main"; }
+  .sidebar { position: fixed; left: 0; top: 48px; bottom: 0; width: 260px; z-index: 50; transform: translateX(-100%); transition: transform var(--fast); border-right: 1px solid var(--line); overflow-y: auto; }
+  .sidebar.is-open { transform: translateX(0); }
+  .titlebar { position: sticky; top: 0; z-index: 60; }
+}
+@media (max-width: 600px) {
+  .app { grid-template-columns: 1fr; grid-template-areas: "title" "main"; }
+  .titlebar h1 { font-size: 13px; }
+  .brand-badge { font-size: 9px; padding: 3px 5px; }
+  .conn-bar { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 12px; }
+  .conn-bar__field { justify-content: space-between; }
+  .conn-bar__field input.url-input { min-width: 0; width: 100%; }
+  .toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .toolbar__left, .toolbar__right { justify-content: space-between; }
+  .search-box input { width: 100%; }
+  .model-grid { grid-template-columns: 1fr; padding: 10px 12px; }
+  .modal { width: 95%; max-width: 95%; }
+  .selected-bar { flex-wrap: wrap; gap: 6px; }
+  .preset-row { justify-content: center; }
+  .preset-btn { font-size: 10px; padding: 4px 8px; }
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.model-card { animation: fadeIn 160ms ease; }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="titlebar">
+    <div class="titlebar__brand">
+      <span class="brand-badge">AI</span>
+      <h1>Model Manager</h1>
+    </div>
+    <div class="titlebar__actions">
+      <button class="icon-btn" id="btn-sidebar-toggle" title="Menu" style="display:none;">☰</button>
+      <button class="btn btn--ghost btn--sm" id="btn-theme">Theme</button>
+      <button class="btn btn--ghost btn--sm" id="btn-settings">Settings</button>
+      <button class="btn btn--primary btn--sm" id="btn-fetch">Fetch Models</button>
+    </div>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__section">
+      <div class="sidebar__title">
+        <span>Connection</span>
+        <button class="icon-btn" id="btn-test" title="Test">📡</button>
+      </div>
+      <div class="field">
+        <label class="field__label">API Base URL</label>
+        <input type="text" id="api-url" placeholder="http://localhost:11434" autocomplete="off">
+      </div>
+      <div class="field">
+        <label class="field__label">API Key <span style="color:var(--text-mute)">(optional)</span></label>
+        <div style="display:flex;gap:6px;">
+          <input type="password" id="api-key" placeholder="sk-..." style="flex:1;">
+          <button class="icon-btn" id="btn-toggle-key" title="Show">👁</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field__label">Auth Type</label>
+        <select id="auth-type">
+          <option value="None">None</option>
+          <option value="Bearer">Bearer Token</option>
+          <option value="Basic">Basic Auth</option>
+          <option value="X-API-Key">X-API-Key Header</option>
+        </select>
+      </div>
+      <div class="preset-row">
+        <button class="preset-btn" data-url="http://localhost:11434" data-auth="None" data-note="Local Ollama. Fetch Models lists what you've pulled.">Ollama</button>
+        <button class="preset-btn" data-url="https://api.openai.com/v1" data-auth="Bearer" data-note="Model IDs like gpt-4o, gpt-4o-mini.">OpenAI</button>
+        <button class="preset-btn" data-url="https://openrouter.ai/api/v1" data-auth="Bearer" data-note="One key, hundreds of models. IDs need a provider prefix, e.g. z-ai/glm-4.7, anthropic/claude-sonnet-4.5.">OpenRouter</button>
+        <button class="preset-btn" data-url="http://localhost:1234/v1" data-auth="None" data-note="Local LM Studio server.">LM Studio</button>
+        <button class="preset-btn" data-url="https://api.cerebras.ai/v1" data-auth="Bearer" data-note="No model-list endpoint — type the model ID manually below, e.g. llama-3.3-70b.">Cerebras</button>
+        <button class="preset-btn" data-url="https://api.groq.com/openai/v1" data-auth="Bearer" data-note="Model IDs like llama-3.3-70b-versatile.">Groq</button>
+        <button class="preset-btn" data-url="https://api.together.xyz/v1" data-auth="Bearer" data-note="Model IDs include the org prefix, e.g. meta-llama/Llama-3.3-70B-Instruct-Turbo.">Together</button>
+        <button class="preset-btn" data-url="https://api.deepseek.com/v1" data-auth="Bearer" data-note="Model IDs: deepseek-chat, deepseek-reasoner.">DeepSeek</button>
+        <button class="preset-btn" data-url="https://api.mistral.ai/v1" data-auth="Bearer" data-note="Model IDs like mistral-large-latest.">Mistral</button>
+        <button class="preset-btn" data-url="https://api.z.ai/api/paas/v4" data-auth="Bearer" data-note="Zhipu/Z.ai GLM models. If model-list fails, type the model ID manually below, e.g. glm-4.7.">Z.ai (GLM)</button>
+        <button class="preset-btn" data-url="https://api.fireworks.ai/inference/v1" data-auth="Bearer" data-note="Model IDs include an accounts/ path, e.g. accounts/fireworks/models/llama-v3p3-70b-instruct.">Fireworks</button>
+      </div>
+      <div class="field" style="margin-top:4px;">
+        <label class="field__label">Manual Model ID <span style="color:var(--text-mute)">(if a provider has no model list)</span></label>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="manual-model-id" placeholder="e.g. glm-4.7 or z-ai/glm-4.7" style="flex:1;">
+          <button class="btn btn--sm" id="btn-use-manual-model">Use</button>
+        </div>
+      </div>
+      <button class="btn btn--sm" id="btn-save-api" style="width:100%;">Save API</button>
+    </div>
+
+    <div class="sidebar__section">
+      <div class="sidebar__title">
+        <span>Saved APIs</span>
+        <span id="api-count" style="color:var(--text-mute);font-size:10px;">0</span>
+      </div>
+      <div class="api-list" id="api-list" style="padding-right:4px;"></div>
+    </div>
+
+    <div class="sidebar__section" style="flex:1;">
+      <div class="sidebar__title">Quick Filters</div>
+      <label class="switch">
+        <span class="switch__label">Favorites only</span>
+        <input type="checkbox" id="filter-fav">
+        <span class="switch__track"><span class="switch__thumb"></span></span>
+      </label>
+      <label class="switch">
+        <span class="switch__label">Hide small models</span>
+        <input type="checkbox" id="filter-small">
+        <span class="switch__track"><span class="switch__thumb"></span></span>
+      </label>
+      <label class="switch">
+        <span class="switch__label">Group by source</span>
+        <input type="checkbox" id="filter-group">
+        <span class="switch__track"><span class="switch__thumb"></span></span>
+      </label>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="conn-bar">
+      <div class="conn-bar__field">
+        <label>Status:</label>
+        <span class="status-pill status-pill--err" id="conn-status">
+          <span class="status-dot"></span>
+          <span id="conn-text">Not connected</span>
+        </span>
+      </div>
+      <div class="conn-bar__field">
+        <label>Format:</label>
+        <select id="api-format">
+          <option value="auto">Auto-detect</option>
+          <option value="ollama">Ollama</option>
+          <option value="openai">OpenAI-compatible</option>
+        </select>
+      </div>
+      <div class="conn-bar__field">
+        <label>Timeout:</label>
+        <input type="number" id="timeout" value="15" min="5" max="120" style="width:60px;">
+      </div>
+      <div class="conn-bar__spacer"></div>
+      <div class="conn-bar__field">
+        <span id="model-count" style="color:var(--text-mute);font-size:12px;">0 models</span>
+      </div>
+      <button class="btn btn--sm btn--ghost" id="btn-pull" title="Pull a model (Ollama only)">⬇ Pull</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar__left">
+        <div class="search-box">
+          <input type="text" id="search" placeholder="Search models..." autocomplete="off">
+        </div>
+        <button class="btn btn--sm btn--ghost" id="btn-clear-search">Clear</button>
+      </div>
+      <div class="toolbar__right">
+        <button class="btn btn--sm btn--ghost" id="btn-export">Export</button>
+        <button class="btn btn--sm btn--ghost" id="btn-import">Import</button>
+        <button class="btn btn--sm btn--ghost" id="btn-refresh">Refresh</button>
+      </div>
+    </div>
+
+    <div class="model-grid" id="model-grid">
+      <div class="empty-state">
+        <div class="empty-state__icon">🤖</div>
+        <div class="empty-state__title">No models loaded</div>
+        <div class="empty-state__desc">Enter an API URL and click Fetch Models to discover available AI models.</div>
+      </div>
+    </div>
+
+    <div class="selected-bar" id="selected-bar" style="display:none;">
+      <span class="selected-bar__label">SELECTED</span>
+      <span class="selected-bar__name" id="selected-name">—</span>
+      <button class="btn btn--primary btn--xs" id="btn-use">Use</button>
+      <button class="btn btn--xs" id="btn-copy-id">Copy ID</button>
+      <button class="btn btn--xs btn--danger" id="btn-deselect">✕</button>
+    </div>
+  </main>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="modal-settings">
+  <div class="modal">
+    <div class="modal__header">
+      <h3>Settings</h3>
+      <button class="icon-btn" id="btn-close-settings">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="settings-tabs">
+        <button class="settings-tab is-active" data-tab="appearance">Appearance</button>
+        <button class="settings-tab" data-tab="behavior">Behavior</button>
+        <button class="settings-tab" data-tab="model">Model Config</button>
+        <button class="settings-tab" data-tab="advanced">Advanced</button>
+      </div>
+
+      <div class="settings-panel is-active" data-panel="appearance">
+        <div class="field">
+          <label class="field__label">Theme Preset</label>
+          <select id="theme-preset">
+            <option value="dark">Dark (Default)</option>
+            <option value="darker">Darker</option>
+            <option value="ocean">Ocean</option>
+            <option value="forest">Forest</option>
+            <option value="purple">Purple</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div id="custom-colors" style="display:none;">
+          <div class="color-row"><input type="color" id="color-bg" value="#0b0d10"><span>Background</span></div>
+          <div class="color-row"><input type="color" id="color-surface" value="#11141a"><span>Surface</span></div>
+          <div class="color-row"><input type="color" id="color-primary" value="#3ddc97"><span>Primary</span></div>
+          <div class="color-row"><input type="color" id="color-text" value="#e3e9f2"><span>Text</span></div>
+          <div class="color-row"><input type="color" id="color-warn" value="#f0a742"><span>Warning</span></div>
+          <div class="color-row"><input type="color" id="color-danger" value="#f2555a"><span>Danger</span></div>
+        </div>
+        <div class="field">
+          <label class="field__label">Font Size</label>
+          <input type="range" id="font-size" min="11" max="16" value="13" style="width:100%;">
+          <div class="field__hint" id="font-size-val">13px</div>
+        </div>
+        <div class="field">
+          <label class="field__label">Border Radius</label>
+          <select id="border-radius">
+            <option value="4px">Small</option>
+            <option value="6px" selected>Medium</option>
+            <option value="10px">Large</option>
+            <option value="16px">Extra Large</option>
+          </select>
+        </div>
+        <label class="switch">
+          <span class="switch__label">Compact mode</span>
+          <input type="checkbox" id="compact-mode">
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </label>
+        <label class="switch">
+          <span class="switch__label">Show model icons</span>
+          <input type="checkbox" id="show-icons" checked>
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </label>
+      </div>
+
+      <div class="settings-panel" data-panel="behavior">
+        <div class="field">
+          <label class="field__label">Auto-fetch on startup</label>
+          <select id="auto-fetch">
+            <option value="none">Disabled</option>
+            <option value="last">Last used API</option>
+            <option value="all">All saved APIs</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field__label">Default timeout (seconds)</label>
+          <input type="number" id="default-timeout" value="15" min="5" max="120">
+        </div>
+        <label class="switch">
+          <span class="switch__label">Confirm before clearing</span>
+          <input type="checkbox" id="confirm-clear" checked>
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </label>
+        <label class="switch">
+          <span class="switch__label">Auto-save API history</span>
+          <input type="checkbox" id="auto-save" checked>
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </label>
+        <label class="switch">
+          <span class="switch__label">Show toast notifications</span>
+          <input type="checkbox" id="show-toasts" checked>
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </label>
+        <label class="switch">
+          <span class="switch__label">Enable keyboard shortcuts</span>
+          <input type="checkbox" id="shortcuts" checked>
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </label>
+      </div>
+
+      <div class="settings-panel" data-panel="model">
+        <div class="field">
+          <label class="field__label">Default Context Length (tokens)</label>
+          <input type="number" id="ctx-length" value="8192" min="512" max="256000" step="512">
+          <div class="field__hint">Context window size in tokens. Ollama default: 2048, Common: 4096-8192, Large: 128K+</div>
+        </div>
+        <div class="field">
+          <label class="field__label">System RAM (GB)</label>
+          <input type="number" id="sys-ram" value="16" min="1" max="512" step="1">
+          <div class="field__hint">Your system RAM in GB. Used to estimate model compatibility.</div>
+        </div>
+        <div class="field">
+          <label class="field__label">GPU VRAM (GB) <span style="color:var(--text-mute)">(optional)</span></label>
+          <input type="number" id="gpu-vram" value="" min="0" max="128" step="1" placeholder="e.g. 8">
+          <div class="field__hint">GPU VRAM in GB. Leave empty if CPU-only.</div>
+        </div>
+        <div class="field">
+          <label class="field__label">Quantization Preference</label>
+          <select id="quant-pref">
+            <option value="auto">Auto (best fit)</option>
+            <option value="Q4_0">Q4_0 — Fastest, smallest</option>
+            <option value="Q4_K_M">Q4_K_M — Balanced (recommended)</option>
+            <option value="Q5_K_M">Q5_K_M — Better quality</option>
+            <option value="Q6_K">Q6_K — High quality</option>
+            <option value="Q8_0">Q8_0 — Best quality, largest</option>
+            <option value="fp16">FP16 — Full precision</option>
+          </select>
+          <div class="field__hint">Preferred quantization level for model downloads.</div>
+        </div>
+        <label class="switch">
+          <span class="switch__label">Show context length in model cards</span>
+          <input type="checkbox" id="show-ctx" checked>
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </label>
+        <label class="switch">
+          <span class="switch__label">Show RAM compatibility indicator</span>
+          <input type="checkbox" id="show-ram-compat" checked>
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </label>
+        <div style="margin-top:12px;padding:10px;border-radius:var(--r-md);background:var(--elev);border:1px solid var(--line);">
+          <div style="font-size:11px;color:var(--text-mute);margin-bottom:6px;">Quick Reference</div>
+          <div style="font-size:10px;color:var(--text-dim);line-height:1.6;font-family:var(--font-mono);">
+            <div>7B model ≈ 4-8 GB RAM (Q4)</div>
+            <div>13B model ≈ 8-16 GB RAM (Q4)</div>
+            <div>30B model ≈ 16-32 GB RAM (Q4)</div>
+            <div>70B model ≈ 40-80 GB RAM (Q4)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-panel" data-panel="advanced">
+        <div class="field">
+          <label class="field__label">Custom headers (JSON)</label>
+          <textarea id="custom-headers" placeholder='{"X-Custom": "value"}'></textarea>
+          <div class="field__hint">Added to every request. Must be valid JSON.</div>
+        </div>
+        <div class="field">
+          <label class="field__label">Proxy URL</label>
+          <input type="text" id="proxy-url" placeholder="http://proxy:8080">
+        </div>
+        <div class="field">
+          <label class="field__label">Request retry count</label>
+          <input type="number" id="retry-count" value="2" min="0" max="5">
+        </div>
+        <label class="switch">
+          <span class="switch__label">Debug mode (log to console)</span>
+          <input type="checkbox" id="debug-mode">
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </label>
+        <label class="switch">
+          <span class="switch__label">Allow insecure HTTPS</span>
+          <input type="checkbox" id="insecure">
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </label>
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--line-soft);">
+          <button class="btn btn--danger btn--sm" id="btn-reset-all">Reset All</button>
+          <button class="btn btn--sm" id="btn-clear-data" style="margin-left:8px;">Clear Data</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" id="btn-cancel-settings">Cancel</button>
+      <button class="btn btn--primary" id="btn-save-settings">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Theme Modal -->
+<div class="modal-overlay" id="modal-theme">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal__header">
+      <h3>Quick Theme</h3>
+      <button class="icon-btn" id="btn-close-theme">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="preset-row">
+        <button class="preset-btn" data-theme="dark" style="background:#0b0d10;color:#3ddc97;border-color:#3ddc97;">Dark</button>
+        <button class="preset-btn" data-theme="darker" style="background:#07080a;color:#4ec9b0;border-color:#4ec9b0;">Darker</button>
+        <button class="preset-btn" data-theme="ocean" style="background:#0a1628;color:#5b8def;border-color:#5b8def;">Ocean</button>
+        <button class="preset-btn" data-theme="forest" style="background:#0a1f0a;color:#7ee787;border-color:#7ee787;">Forest</button>
+        <button class="preset-btn" data-theme="purple" style="background:#1a0a2e;color:#c084fc;border-color:#c084fc;">Purple</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+const STORAGE_KEY = 'ai_model_manager_v1';
+
+const DEFAULT_STATE = {
+  apis: [
+    { name: 'Local Ollama', url: 'http://localhost:11434', key: '', auth: 'None' },
+    { name: 'OpenAI', url: 'https://api.openai.com/v1', key: '', auth: 'Bearer' },
+    { name: 'OpenRouter', url: 'https://openrouter.ai/api/v1', key: '', auth: 'Bearer' },
+  ],
+  favorites: [],
+  selectedModel: null,
+  settings: {
+    theme: 'dark', fontSize: 13, borderRadius: '6px', compactMode: false, showIcons: true,
+    autoFetch: 'none', defaultTimeout: 15, confirmClear: true, autoSave: true,
+    showToasts: true, shortcuts: true, customHeaders: '', proxyUrl: '', retryCount: 2,
+    debugMode: false, insecure: false,
+  },
+  customColors: { bg: '#0b0d10', surface: '#11141a', primary: '#3ddc97', text: '#e3e9f2', warn: '#f0a742', danger: '#f2555a' },
+  lastApiIndex: 0,
+};
+
+let state = loadState();
+let currentModels = [];
+let selectedModel = null;
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return { ...DEFAULT_STATE, ...JSON.parse(raw) };
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_STATE));
+}
+
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveQuiet() { saveState(); }
+
+const $ = (id) => document.getElementById(id);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+function toast(msg, type = 'info', title = '') {
+  if (!state.settings.showToasts) return;
+  const container = $('toasts');
+  const el = document.createElement('div');
+  el.className = `toast toast--${type}`;
+  el.innerHTML = `<div class="toast__title">${title || type.charAt(0).toUpperCase() + type.slice(1)}</div><div class="toast__body">${msg}</div>`;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+const THEMES = {
+  dark: { bg: '#0b0d10', surface: '#11141a', primary: '#3ddc97', text: '#e3e9f2', warn: '#f0a742', danger: '#f2555a' },
+  darker: { bg: '#07080a', surface: '#0d0f14', primary: '#4ec9b0', text: '#d4d4d4', warn: '#ce9178', danger: '#f44747' },
+  ocean: { bg: '#0a1628', surface: '#0f1d33', primary: '#5b8def', text: '#c7d8e8', warn: '#f0a742', danger: '#f2555a' },
+  forest: { bg: '#0a1f0a', surface: '#0f2a0f', primary: '#7ee787', text: '#d4e8d4', warn: '#f0a742', danger: '#f2555a' },
+  purple: { bg: '#1a0a2e', surface: '#251040', primary: '#c084fc', text: '#e8d4f8', warn: '#f0a742', danger: '#f2555a' },
+};
+
+function applyTheme(themeName) {
+  const t = THEMES[themeName] || THEMES.dark;
+  const root = document.documentElement;
+  root.style.setProperty('--bg', t.bg);
+  root.style.setProperty('--surface', t.surface);
+  root.style.setProperty('--primary', t.primary);
+  root.style.setProperty('--text', t.text);
+  root.style.setProperty('--warn', t.warn);
+  root.style.setProperty('--danger', t.danger);
+  $('color-bg').value = t.bg;
+  $('color-surface').value = t.surface;
+  $('color-primary').value = t.primary;
+  $('color-text').value = t.text;
+  $('color-warn').value = t.warn;
+  $('color-danger').value = t.danger;
+  state.customColors = { ...t };
+  state.settings.theme = themeName;
+  saveQuiet();
+}
+
+function applyCustomColors() {
+  const root = document.documentElement;
+  root.style.setProperty('--bg', $('color-bg').value);
+  root.style.setProperty('--surface', $('color-surface').value);
+  root.style.setProperty('--primary', $('color-primary').value);
+  root.style.setProperty('--text', $('color-text').value);
+  root.style.setProperty('--warn', $('color-warn').value);
+  root.style.setProperty('--danger', $('color-danger').value);
+  state.customColors = { bg: $('color-bg').value, surface: $('color-surface').value, primary: $('color-primary').value, text: $('color-text').value, warn: $('color-warn').value, danger: $('color-danger').value };
+  saveQuiet();
+}
+
+async function fetchModels(baseUrl, apiKey = '', authType = 'None', format = 'auto') {
+  const timeout = parseInt($('timeout').value) * 1000 || 15000;
+  const headers = buildHeaders(apiKey, authType);
+  const url = baseUrl.replace(/\/$/, '');
+
+  // Helper: use server proxy for external URLs to avoid CORS
+  const isExternal = !url.includes('localhost') && !url.includes('127.0.0.1') && !url.startsWith(window.location.origin);
+  async function proxyFetch(targetUrl, opts) {
+    if (!isExternal) return fetchWithTimeout(targetUrl, opts, timeout);
+    const proxyResp = await fetch('/api/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: targetUrl,
+        method: opts.method || 'GET',
+        headers: opts.headers || {},
+        timeout: timeout / 1000
+      })
+    });
+    const proxyData = await proxyResp.json();
+    if (!proxyData.ok) throw new Error(proxyData.error || 'Proxy request failed');
+    // Wrap proxy response to look like a real Response
+    return {
+      ok: proxyData.status >= 200 && proxyData.status < 300,
+      status: proxyData.status,
+      json: async () => proxyData.data,
+      text: async () => proxyData.text || JSON.stringify(proxyData.data)
+    };
+  }
+
+  // Try Ollama first if auto or ollama
+  if (format === 'auto' || format === 'ollama') {
+    try {
+      const resp = await proxyFetch(url + '/api/tags', { method: 'GET', headers });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.models && Array.isArray(data.models)) {
+          return data.models.map(m => ({
+            id: m.name,
+            name: m.name,
+            size: formatSize(m.size),
+            description: m.details?.family || m.details?.parameter_size || m.details?.format || '',
+            source: baseUrl,
+            format: 'ollama',
+            quant: m.details?.quantization_level || '',
+            family: m.details?.family || '',
+            parameterSize: m.details?.parameter_size || ''
+          })) || [];
+        }
+      }
+    } catch (e) { 
+      if (state.settings.debugMode) console.log('Ollama fetch fail:', e);
+      if (format === 'ollama') throw new Error('Ollama connection failed: ' + (e.message || 'Unknown error'));
+    }
+  }
+
+  // Try OpenAI-compatible API
+  if (format === 'auto' || format === 'openai') {
+    try {
+      const resp = await proxyFetch(url + '/v1/models', { method: 'GET', headers });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.data && Array.isArray(data.data)) {
+          return data.data.map(m => ({
+            id: m.id,
+            name: m.id,
+            size: m.size ? formatSize(m.size) : '',
+            description: m.object || m.owned_by || 'model',
+            source: baseUrl,
+            format: 'openai'
+          })) || [];
+        }
+      }
+    } catch (e) { 
+      if (state.settings.debugMode) console.log('OpenAI fetch fail:', e);
+      if (format === 'openai') throw new Error('OpenAI-compatible connection failed: ' + (e.message || 'Unknown error'));
+    }
+  }
+
+  throw new Error('Could not connect to ' + url + '. Check URL, ensure the service is running, and try Test Connection first.');
+}
+
+async function testConnection(baseUrl, apiKey = '', authType = 'None') {
+  const timeout = parseInt($('timeout').value) * 1000 || 8000;
+  const headers = buildHeaders(apiKey, authType);
+  const url = baseUrl.replace(/\/$/, '');
+
+  // Test Ollama
+  try {
+    const resp = await fetchWithTimeout(url + '/api/tags', { method: 'GET', headers }, timeout);
+    if (resp.ok) {
+      const data = await resp.json();
+      return { 
+        ok: true, 
+        type: 'ollama',
+        version: data.version || 'unknown',
+        modelCount: data.models?.length || 0
+      };
+    }
+    if (resp.status === 401) return { ok: false, error: 'Authentication failed (401). Check your API key.' };
+    if (resp.status === 403) return { ok: false, error: 'Access denied (403). Check permissions.' };
+  } catch (e) {
+    if (e.message && e.message.includes('Timeout')) return { ok: false, error: 'Connection timed out. Service may be starting up or unreachable.' };
+  }
+
+  // Test OpenAI-compatible
+  try {
+    const resp = await fetchWithTimeout(url + '/v1/models', { method: 'GET', headers }, timeout);
+    if (resp.ok) return { ok: true, type: 'openai' };
+    if (resp.status === 401) return { ok: false, error: 'Authentication failed (401). Check your API key.' };
+  } catch (e) {
+    if (e.message && e.message.includes('Timeout')) return { ok: false, error: 'Connection timed out.' };
+  }
+
+  return { ok: false, error: 'Connection failed. Ensure the URL is correct and the service is running.' };
+}
+
+function buildHeaders(apiKey, authType) {
+  const h = { 'Accept': 'application/json' };
+  if (state.settings.customHeaders) { try { Object.assign(h, JSON.parse(state.settings.customHeaders)); } catch (e) {} }
+  if (!apiKey || authType === 'None') return h;
+  if (authType === 'Bearer') h['Authorization'] = `Bearer ${apiKey}`;
+  else if (authType === 'Basic') h['Authorization'] = `Basic ${btoa(apiKey)}`;
+  else if (authType === 'X-API-Key') h['X-API-Key'] = apiKey;
+  return h;
+}
+
+function fetchWithTimeout(url, options, timeout) {
+  return Promise.race([fetch(url, options), new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))]);
+}
+
+function formatSize(bytes) {
+  if (!bytes) return '';
+  if (bytes > 1e9) return (bytes / 1e9).toFixed(1) + ' GB';
+  if (bytes > 1e6) return (bytes / 1e6).toFixed(1) + ' MB';
+  if (bytes > 1e3) return (bytes / 1e3).toFixed(1) + ' KB';
+  return bytes + ' B';
+}
+
+function renderApiList() {
+  const container = $('api-list');
+  container.innerHTML = '';
+  state.apis.forEach((api, idx) => {
+    const el = document.createElement('div');
+    el.className = 'api-item' + (idx === state.lastApiIndex ? ' is-active' : '');
+    el.innerHTML = `<div class="api-item__icon">${api.name.charAt(0).toUpperCase()}</div><div class="api-item__info"><div class="api-item__name">${escapeHtml(api.name)}</div><div class="api-item__url">${escapeHtml(api.url)}</div></div><button class="icon-btn api-item__delete" data-idx="${idx}" title="Remove">🗑</button>`;
+    el.addEventListener('click', (e) => { if (e.target.closest('.api-item__delete')) return; loadApi(idx); });
+    el.querySelector('.api-item__delete').addEventListener('click', (e) => { e.stopPropagation(); removeApi(idx); });
+    container.appendChild(el);
+  });
+  $('api-count').textContent = state.apis.length;
+}
+
+function loadApi(idx) {
+  const api = state.apis[idx];
+  if (!api) return;
+  $('api-url').value = api.url;
+  $('api-key').value = api.key || '';
+  $('auth-type').value = api.auth || 'None';
+  state.lastApiIndex = idx;
+  saveQuiet();
+  renderApiList();
+  toast(`Loaded "${api.name}"`, 'info');
+}
+
+function removeApi(idx) {
+  if (state.settings.confirmClear && !confirm('Remove this saved API?')) return;
+  state.apis.splice(idx, 1);
+  if (state.lastApiIndex >= state.apis.length) state.lastApiIndex = Math.max(0, state.apis.length - 1);
+  saveQuiet();
+  renderApiList();
+}
+
+function saveCurrentApi() {
+  const url = $('api-url').value.trim();
+  if (!url) { toast('Enter an API URL first', 'warn'); return; }
+  const name = prompt('Name for this API:', guessApiName(url));
+  if (!name) return;
+  state.apis = state.apis.filter(a => a.url !== url);
+  state.apis.push({ name, url, key: $('api-key').value, auth: $('auth-type').value });
+  state.lastApiIndex = state.apis.length - 1;
+  saveQuiet();
+  renderApiList();
+  toast(`Saved "${name}"`, 'ok');
+}
+
+function guessApiName(url) {
+  if (url.includes('11434') || url.includes('ollama')) return 'Ollama';
+  if (url.includes('openai')) return 'OpenAI';
+  if (url.includes('openrouter')) return 'OpenRouter';
+  if (url.includes('1234') || url.includes('lmstudio')) return 'LM Studio';
+  return 'Custom API';
+}
+
+function estimateContextLength(name, sizeStr) {
+  // Extract parameter count from name
+  const paramMatch = name.match(/(\d+)(?:\.\d+)?[bB]/);
+  if (!paramMatch) return null;
+  const params = parseFloat(paramMatch[1]);
+
+  // Common context lengths by model family
+  if (name.toLowerCase().includes('qwen2.5')) return '128K';
+  if (name.toLowerCase().includes('llama3')) return '128K';
+  if (name.toLowerCase().includes('llama2')) return '4K';
+  if (name.toLowerCase().includes('mistral')) return '32K';
+  if (name.toLowerCase().includes('mixtral')) return '32K';
+  if (name.toLowerCase().includes('deepseek')) return '128K';
+  if (name.toLowerCase().includes('gemma')) return '8K';
+  if (name.toLowerCase().includes('phi')) return '128K';
+  if (name.toLowerCase().includes('codellama')) return '16K';
+
+  // Default based on size
+  if (params >= 70) return '128K';
+  if (params >= 30) return '32K';
+  if (params >= 13) return '16K';
+  if (params >= 7) return '8K';
+  return '4K';
+}
+
+function estimateRamUsage(name, sizeStr) {
+  // Extract parameter count
+  const paramMatch = name.match(/(\d+)(?:\.\d+)?[bB]/);
+  if (!paramMatch) return null;
+  const params = parseFloat(paramMatch[1]);
+
+  // Extract quantization from name
+  let quant = state.settings.quantPref || 'auto';
+  const quantMatch = name.match(/(Q[4568]_[K_\w]+|fp16)/i);
+  if (quantMatch) quant = quantMatch[1];
+
+  // Bytes per parameter based on quantization
+  const bytesPerParam = {
+    'Q4_0': 0.5, 'Q4_K_M': 0.5, 'Q4_K_S': 0.46,
+    'Q5_0': 0.6, 'Q5_K_M': 0.6, 'Q5_K_S': 0.55,
+    'Q6_K': 0.7, 'Q8_0': 1.0, 'fp16': 2.0
+  };
+
+  const bpp = bytesPerParam[quant] || 0.6;
+  const estimated = Math.ceil((params * 1e9 * bpp) / (1024 * 1024 * 1024));
+
+  return { estimated, quant, params };
+}
+
+function renderModels(models) {
+  const grid = $('model-grid');
+  const filterFav = $('filter-fav').checked;
+  const filterSmall = $('filter-small').checked;
+  const search = $('search').value.toLowerCase();
+  let filtered = models;
+  if (filterFav) filtered = filtered.filter(m => state.favorites.includes(m.id));
+  if (filterSmall) filtered = filtered.filter(m => { const size = parseFloat(m.size); const unit = m.size.includes('GB') ? 1e9 : m.size.includes('MB') ? 1e6 : 1e3; return isNaN(size) || size * unit >= 1e9; });
+  if (search) filtered = filtered.filter(m => m.name.toLowerCase().includes(search) || m.description.toLowerCase().includes(search));
+  $('model-count').textContent = `${filtered.length} model${filtered.length !== 1 ? 's' : ''}`;
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state__icon">🔍</div><div class="empty-state__title">No models match</div><div class="empty-state__desc">Try adjusting filters or search.</div></div>`;
+    return;
+  }
+  grid.innerHTML = '';
+  filtered.forEach(m => {
+    const card = document.createElement('div');
+    const isFav = state.favorites.includes(m.id);
+    const isSelected = selectedModel?.id === m.id;
+    card.className = 'model-card' + (isFav ? ' is-favorite' : '') + (isSelected ? ' is-selected' : '');
+    const ctxInfo = state.settings.showCtx ? estimateContextLength(m.name, m.size) : null;
+    const ramInfo = state.settings.showRamCompat ? estimateRamUsage(m.name, m.size) : null;
+    const totalRam = (state.settings.sysRam || 16) + (state.settings.gpuVram || 0);
+    const ramOk = ramInfo ? ramInfo.estimated <= totalRam * 0.9 : true;
+
+    card.innerHTML = `<div class="model-card__header"><div class="model-card__icon">${getModelIcon(m.name)}</div><div class="model-card__title"><div class="model-card__name">${escapeHtml(m.name)}</div><div class="model-card__id">${escapeHtml(m.id)}</div></div></div><div class="model-card__tags">${m.size ? `<span class="tag tag--size">${m.size}</span>` : ''}${m.description ? `<span class="tag tag--family">${escapeHtml(m.description)}</span>` : ''}${ctxInfo ? `<span class="tag tag--ctx" title="Estimated context length">${ctxInfo}</span>` : ''}${ramInfo ? `<span class="tag tag--ram ${ramOk ? 'tag--ram-ok' : 'tag--ram-warn'}" title="Est. RAM: ${ramInfo.estimated}GB, Total: ${totalRam}GB">${ramOk ? '✓' : '⚠'} ${ramInfo.estimated}GB</span>` : ''}<span class="tag tag--source">${escapeHtml(m.source.replace(/^https?:\/\//, '').split('/')[0])}</span></div><div class="model-card__actions"><button class="btn btn--xs btn--primary" data-action="select" data-id="${escapeHtml(m.id)}">Select</button><button class="btn btn--xs btn--ghost" data-action="fav" data-id="${escapeHtml(m.id)}">${isFav ? '★ Unstar' : '☆ Star'}</button><button class="btn btn--xs btn--ghost" data-action="copy" data-id="${escapeHtml(m.id)}">Copy</button></div>`;
+    card.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const model = currentModels.find(cm => cm.id === btn.dataset.id);
+        if (!model) return;
+        if (btn.dataset.action === 'select') selectModel(model);
+        else if (btn.dataset.action === 'fav') toggleFavorite(model.id);
+        else if (btn.dataset.action === 'copy') copyToClipboard(model.id);
+      });
+    });
+    card.addEventListener('click', () => selectModel(m));
+    grid.appendChild(card);
+  });
+}
+
+function getModelIcon(name) {
+  const n = name.toLowerCase();
+  if (n.includes('gpt')) return '🧠';
+  if (n.includes('claude')) return '📚';
+  if (n.includes('llama')) return '🦙';
+  if (n.includes('mistral')) return '💨';
+  if (n.includes('qwen')) return '🔮';
+  if (n.includes('deepseek')) return '🔍';
+  if (n.includes('cod')) return '💻';
+  if (n.includes('vision')) return '👁';
+  if (n.includes('embed')) return '📊';
+  return '🤖';
+}
+
+function selectModel(model) {
+  selectedModel = model;
+  state.selectedModel = model;
+  saveQuiet();
+  $('selected-bar').style.display = 'flex';
+  $('selected-name').textContent = model.name;
+  renderModels(currentModels);
+}
+
+function deselectModel() {
+  selectedModel = null;
+  state.selectedModel = null;
+  saveQuiet();
+  $('selected-bar').style.display = 'none';
+  renderModels(currentModels);
+}
+
+function toggleFavorite(id) {
+  const idx = state.favorites.indexOf(id);
+  if (idx >= 0) { state.favorites.splice(idx, 1); toast('Removed from favorites', 'info'); }
+  else { state.favorites.push(id); toast('Added to favorites', 'ok'); }
+  saveQuiet();
+  renderModels(currentModels);
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => toast('Copied!', 'ok'));
+}
+
+function escapeHtml(s) { const div = document.createElement('div'); div.textContent = s; return div.innerHTML; }
+
+function setStatus(type, text) {
+  const pill = $('conn-status');
+  pill.className = `status-pill status-pill--${type}`;
+  $('conn-text').textContent = text;
+  pill.querySelector('.status-dot').className = 'status-dot' + (type === 'ok' ? ' status-dot--pulse' : '');
+}
+
+// Event handlers
+$('btn-fetch').addEventListener('click', async () => {
+  const url = $('api-url').value.trim();
+  if (!url) { toast('Enter an API URL', 'warn'); return; }
+  setStatus('warn', 'Fetching...');
+  $('btn-fetch').disabled = true;
+  try {
+    const models = await fetchModels(url, $('api-key').value, $('auth-type').value, $('api-format').value);
+    currentModels = models;
+    renderModels(models);
+    setStatus('ok', `Connected · ${models.length} models`);
+    toast(`Found ${models.length} models`, 'ok');
+    if (state.settings.autoSave) {
+      const exists = state.apis.some(a => a.url === url);
+      if (!exists) {
+        state.apis.push({ name: guessApiName(url), url, key: $('api-key').value, auth: $('auth-type').value });
+        saveQuiet();
+        renderApiList();
+      }
+    }
+  } catch (e) {
+    setStatus('err', 'Connection failed');
+    const msg = e.message || 'Failed to fetch models';
+    toast(msg, 'error');
+    console.error('Fetch error:', e);
+    currentModels = [];
+    renderModels([]);
+  } finally {
+    $('btn-fetch').disabled = false;
+  }
+});
+
+$('btn-test').addEventListener('click', async () => {
+  const url = $('api-url').value.trim();
+  if (!url) { toast('Enter an API URL', 'warn'); return; }
+  setStatus('warn', 'Testing...');
+  try {
+    const result = await testConnection(url, $('api-key').value, $('auth-type').value);
+    if (result.ok) { 
+      let msg = `Connected (${result.type})`;
+      if (result.modelCount !== undefined) msg += ` · ${result.modelCount} models`;
+      if (result.version && result.version !== 'unknown') msg += ` · v${result.version}`;
+      setStatus('ok', msg); 
+      toast(msg, 'ok'); 
+    }
+    else { 
+      setStatus('err', 'Failed'); 
+      toast(result.error || 'Could not connect', 'error'); 
+    }
+  } catch (e) { 
+    setStatus('err', 'Failed'); 
+    toast(e.message || 'Test failed', 'error'); 
+  }
+});
+
+$('btn-save-api').addEventListener('click', saveCurrentApi);
+$('btn-toggle-key').addEventListener('click', () => {
+  const el = $('api-key');
+  const btn = $('btn-toggle-key');
+  if (el.type === 'password') { el.type = 'text'; btn.textContent = '🙈'; }
+  else { el.type = 'password'; btn.textContent = '👁'; }
+});
+
+$$('.preset-btn[data-url]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    $('api-url').value = btn.dataset.url;
+    $('auth-type').value = btn.dataset.auth;
+    toast(`Loaded ${btn.textContent}`, 'info');
+    if (btn.dataset.note) {
+      setTimeout(() => toast(btn.dataset.note, 'info'), 400);
+    }
+  });
+});
+
+$('btn-use-manual-model').addEventListener('click', () => {
+  const id = $('manual-model-id').value.trim();
+  if (!id) { toast('Enter a model ID first', 'warn'); return; }
+  const url = $('api-url').value.trim();
+  if (!url) { toast('Enter an API URL first', 'warn'); return; }
+  const manual = {
+    id, name: id, size: '', description: 'Manually entered',
+    source: url, format: 'openai'
+  };
+  currentModels = [manual, ...currentModels.filter(m => m.id !== id)];
+  renderModels(currentModels);
+  selectModel(manual);
+  setStatus('ok', `Using ${id}`);
+  toast(`Using ${id} — remember to Save API and pick this connection as active`, 'ok');
+});
+
+$('filter-fav').addEventListener('change', () => renderModels(currentModels));
+$('filter-small').addEventListener('change', () => renderModels(currentModels));
+$('search').addEventListener('input', () => renderModels(currentModels));
+$('btn-clear-search').addEventListener('click', () => { $('search').value = ''; renderModels(currentModels); });
+$('btn-deselect').addEventListener('click', deselectModel);
+$('btn-copy-id').addEventListener('click', () => { if (selectedModel) copyToClipboard(selectedModel.id); });
+$('btn-use').addEventListener('click', () => {
+  if (!selectedModel) return;
+  // BUG FIX: this used to read state.apis[state.lastApiIndex] — the last
+  // *saved/loaded* connection — instead of whatever is currently typed
+  // into the URL/key/auth fields. That meant clicking a provider preset
+  // (or typing a manual model ID) without first clicking "Save API" would
+  // silently send the model name paired with a stale, unrelated host —
+  // exactly the "Model 'X' is not installed. Run: ollama pull X" bug.
+  // The form's current values are always the source of truth for intent.
+  window.parent.postMessage({
+    type: 'MODEL_SELECTED',
+    model: selectedModel.id,
+    url: $('api-url').value.trim(),
+    key: $('api-key').value,
+    auth: $('auth-type').value
+  }, '*');
+  toast(`Using: ${selectedModel.name}`, 'ok', 'Model Selected');
+});
+$('btn-refresh').addEventListener('click', () => { if (currentModels.length) { renderModels(currentModels); toast('Refreshed', 'info'); } });
+
+$('btn-export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'ai-model-manager-backup.json'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Exported', 'ok');
+});
+
+$('btn-import').addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const imported = JSON.parse(ev.target.result);
+        state = { ...DEFAULT_STATE, ...imported };
+        saveState();
+        location.reload();
+      } catch (err) { toast('Invalid file', 'error'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+});
+
+// Settings modal
+const modalSettings = $('modal-settings');
+const modalTheme = $('modal-theme');
+
+$('btn-settings').addEventListener('click', () => { loadSettingsToForm(); modalSettings.classList.add('is-open'); });
+$('btn-close-settings').addEventListener('click', () => modalSettings.classList.remove('is-open'));
+$('btn-cancel-settings').addEventListener('click', () => modalSettings.classList.remove('is-open'));
+$('btn-save-settings').addEventListener('click', () => { saveSettingsFromForm(); modalSettings.classList.remove('is-open'); toast('Settings saved', 'ok'); });
+
+$('btn-theme').addEventListener('click', () => modalTheme.classList.add('is-open'));
+$('btn-close-theme').addEventListener('click', () => modalTheme.classList.remove('is-open'));
+
+$$('.settings-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    $$('.settings-tab').forEach(t => t.classList.remove('is-active'));
+    $$('.settings-panel').forEach(p => p.classList.remove('is-active'));
+    tab.classList.add('is-active');
+    document.querySelector(`[data-panel="${tab.dataset.tab}"]`).classList.add('is-active');
+  });
+});
+
+$('theme-preset').addEventListener('change', () => {
+  const isCustom = $('theme-preset').value === 'custom';
+  $('custom-colors').style.display = isCustom ? 'block' : 'none';
+  if (!isCustom) applyTheme($('theme-preset').value);
+});
+
+$$('#custom-colors input[type="color"]').forEach(input => {
+  input.addEventListener('input', applyCustomColors);
+});
+
+$$('.preset-btn[data-theme]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    applyTheme(btn.dataset.theme);
+    modalTheme.classList.remove('is-open');
+    toast(`Theme: ${btn.dataset.theme}`, 'ok');
+  });
+});
+
+$('font-size').addEventListener('input', () => {
+  $('font-size-val').textContent = $('font-size').value + 'px';
+  document.documentElement.style.fontSize = $('font-size').value + 'px';
+});
+
+$('btn-reset-all').addEventListener('click', () => {
+  if (!confirm('Reset ALL settings to defaults?')) return;
+  state.settings = { ...DEFAULT_STATE.settings };
+  saveState();
+  loadSettingsToForm();
+  toast('Settings reset', 'ok');
+});
+
+$('btn-clear-data').addEventListener('click', () => {
+  if (!confirm('Clear ALL data including saved APIs and favorites?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  saveState();
+  location.reload();
+});
+
+function loadSettingsToForm() {
+  const s = state.settings;
+  $('theme-preset').value = s.theme;
+  $('font-size').value = s.fontSize;
+  $('font-size-val').textContent = s.fontSize + 'px';
+  $('border-radius').value = s.borderRadius;
+  $('compact-mode').checked = s.compactMode;
+  $('show-icons').checked = s.showIcons;
+  $('auto-fetch').value = s.autoFetch;
+  $('default-timeout').value = s.defaultTimeout;
+  $('confirm-clear').checked = s.confirmClear;
+  $('auto-save').checked = s.autoSave;
+  $('show-toasts').checked = s.showToasts;
+  $('shortcuts').checked = s.shortcuts;
+  $('custom-headers').value = s.customHeaders;
+  $('proxy-url').value = s.proxyUrl;
+  $('retry-count').value = s.retryCount;
+  $('debug-mode').checked = s.debugMode;
+  $('insecure').checked = s.insecure;
+  $('custom-colors').style.display = s.theme === 'custom' ? 'block' : 'none';
+  document.documentElement.style.fontSize = s.fontSize + 'px';
+  document.documentElement.style.setProperty('--r-sm', s.borderRadius);
+  document.documentElement.style.setProperty('--r-md', s.borderRadius);
+  document.documentElement.style.setProperty('--r-lg', parseInt(s.borderRadius) * 1.5 + 'px');
+}
+
+function saveSettingsFromForm() {
+  state.settings = {
+    theme: $('theme-preset').value,
+    fontSize: parseInt($('font-size').value),
+    borderRadius: $('border-radius').value,
+    compactMode: $('compact-mode').checked,
+    showIcons: $('show-icons').checked,
+    autoFetch: $('auto-fetch').value,
+    defaultTimeout: parseInt($('default-timeout').value),
+    confirmClear: $('confirm-clear').checked,
+    autoSave: $('auto-save').checked,
+    showToasts: $('show-toasts').checked,
+    shortcuts: $('shortcuts').checked,
+    customHeaders: $('custom-headers').value,
+    proxyUrl: $('proxy-url').value,
+    retryCount: parseInt($('retry-count').value),
+    debugMode: $('debug-mode').checked,
+    insecure: $('insecure').checked,
+  };
+  saveState();
+  applyTheme(state.settings.theme);
+}
+
+// Pull model (Ollama only)
+$('btn-pull').addEventListener('click', async () => {
+  const url = $('api-url').value.trim();
+  if (!url) { toast('Enter an API URL first', 'warn'); return; }
+
+  const modelName = prompt('Enter model name to pull (e.g., llama3.2, qwen2.5:14b):');
+  if (!modelName) return;
+
+  toast(`Pulling ${modelName}...`, 'info', 5000);
+  $('btn-pull').disabled = true;
+
+  try {
+    const pullUrl = url.replace(/\/$/, '') + '/api/pull';
+    const isExternalPull = !pullUrl.includes('localhost') && !pullUrl.includes('127.0.0.1') && !pullUrl.startsWith(window.location.origin);
+    let resp;
+    if (isExternalPull) {
+      resp = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: pullUrl,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: { name: modelName, stream: false },
+          timeout: 60
+        })
+      });
+      const proxyData = await resp.json();
+      if (!proxyData.ok) throw new Error(proxyData.error || 'Pull failed');
+      resp = { ok: proxyData.status >= 200 && proxyData.status < 300, status: proxyData.status };
+    } else {
+      resp = await fetch(pullUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: modelName, stream: false })
+      });
+    }
+
+    if (resp.ok) {
+      toast(`Successfully pulled ${modelName}`, 'ok');
+      // Refresh the model list
+      $('btn-fetch').click();
+    } else {
+      const err = await resp.text();
+      toast(`Pull failed: ${err}`, 'error');
+    }
+  } catch (e) {
+    toast('Pull failed: ' + (e.message || 'Network error'), 'error');
+  } finally {
+    $('btn-pull').disabled = false;
+  }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (!state.settings.shortcuts) return;
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'Enter') { e.preventDefault(); $('btn-fetch').click(); }
+    if (e.key === 's') { e.preventDefault(); $('btn-save-api').click(); }
+    if (e.key === 'f') { e.preventDefault(); $('search').focus(); }
+    if (e.key === 't') { e.preventDefault(); $('btn-test').click(); }
+  }
+  if (e.key === 'Escape') {
+    modalSettings.classList.remove('is-open');
+    modalTheme.classList.remove('is-open');
+  }
+});
+
+// Init
+function init() {
+  applyTheme(state.settings.theme);
+  renderApiList();
+  if (state.apis.length && state.lastApiIndex < state.apis.length) {
+    loadApi(state.lastApiIndex);
+  }
+  if (state.settings.autoFetch === 'last' && state.apis.length) {
+    $('btn-fetch').click();
+  }
+
+  // Mobile sidebar toggle
+  const sidebarToggle = $('btn-sidebar-toggle');
+  const sidebar = $('sidebar');
+  if (window.innerWidth <= 900) {
+    sidebarToggle.style.display = 'inline-flex';
+  }
+  sidebarToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('is-open');
+  });
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900 && sidebar.classList.contains('is-open') && 
+        !sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+      sidebar.classList.remove('is-open');
+    }
+  });
+  window.addEventListener('resize', () => {
+    sidebarToggle.style.display = window.innerWidth <= 900 ? 'inline-flex' : 'none';
+    if (window.innerWidth > 900) sidebar.classList.remove('is-open');
+  });
+
+  toast('AI Model Manager ready', 'ok');
+}
+
+init();
+</script>
+</body>
+</html>

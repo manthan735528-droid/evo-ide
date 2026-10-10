@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d1017">
+<meta name="description" content="Evo IDE V6.1 — local agentic IDE for huihui_ai/deepseek-r1-abliterated:14b with zero-truncation code streaming.">
+<title>Evo IDE V6.1 — Your AI Coding Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-files" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></symbol>
+    <symbol id="i-graph" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="M8.2 7.2 15.6 7.6M7.4 8.2 9 15.6M15.9 10 11.4 16.2"/></symbol>
+    <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M2 12h4l2.5-7 4 14L15 12h7"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.7 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.7-3.8-9S9.5 5.6 12 3z"/></symbol>
+    <symbol id="i-cog" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.6M12 18.9v2.6M4.2 7.3l2.2 1.3M17.6 15.4l2.2 1.3M4.2 16.7l2.2-1.3M17.6 8.6l2.2-1.3"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 4.5v15l13-7.5z"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12 20 4l-6 16-3-7z"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></symbol>
+    <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 15l-3-3a10 10 0 0 1 13-13 10 10 0 0 1-13 13z"/><path d="M9 12l-3 3-3-3 3-3M15 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5z"/></symbol>
+    <symbol id="i-brain" viewBox="0 0 24 24"><path d="M9 3.5a3 3 0 0 0-3 3v.3A3 3 0 0 0 4.5 9.5a3.2 3.2 0 0 0 0 5A3 3 0 0 0 6 17.2v.3a3 3 0 0 0 3 3M9 3.5a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3M15 3.5a3 3 0 0 1 3 3v.3a3 3 0 0 1 1.5 2.7 3.2 3.2 0 0 1 0 5 3 3 0 0 1-1.5 2.7v.3a3 3 0 0 1-3 3M15 3.5a3 3 0 0 0-3 3v11a3 3 0 0 0 3 3"/></symbol>
+  </defs>
+</svg>
+
+<!-- ── Welcome Overlay (dismissible, first-run only) ─────── -->
+<div class="welcome-overlay" id="welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+  <div class="welcome-card">
+    <span class="welcome-logo">EVO IDE · V6.1</span>
+    <h1 id="welcome-title">Your AI coding companion.</h1>
+    <p class="lead">A local, private, agentic IDE that streams code, reasons through problems, and edits files with your approval. Made to feel fast, focused, and human.</p>
+
+    <div class="welcome-features">
+      <div class="welcome-feature">
+        <div class="welcome-feature__icon">
+          <svg><use href="#i-sparkle"/></svg>
+        </div>
+        <div>
+          <h3>Ask, don't type</h3>
+          <p>Describe what you need. Evo writes, runs, and refines.</p>
+        </div>
+      </div>
+      <div class="welcome-feature">
+        <div class="welcome-feature__icon">
+          <svg><use href="#i-shield"/></svg>
+        </div>
+        <div>
+          <h3>Review every change</h3>
+          <p>Nothing lands on disk until you approve the diff.</p>
+        </div>
+      </div>
+      <div class="welcome-feature">
+        <div class="welcome-feature__icon">
+          <svg><use href="#i-rocket"/></svg>
+        </div>
+        <div>
+          <h3>Sprint mode</h3>
+          <p>Let Evo run a multi-turn plan while you watch.</p>
+        </div>
+      </div>
+      <div class="welcome-feature">
+        <div class="welcome-feature__icon">
+          <svg><use href="#i-pulse"/></svg>
+        </div>
+        <div>
+          <h3>Live telemetry</h3>
+          <p>See tokens, reasoning, and health in real time.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="welcome-actions">
+      <button class="btn btn--primary" id="welcome-start">
+        <svg class="ico"><use href="#i-rocket"/></svg>
+        <span>Get started</span>
+      </button>
+      <button class="btn btn--ghost" id="welcome-skip">Skip tour</button>
+      <span class="welcome-hint">Tip: press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to run</span>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="app">
+
+  <!-- ── Title bar ────────────────────────────────────────── -->
+  <header class="titlebar" role="banner">
+    <div class="titlebar__left">
+      <span class="brand" aria-hidden="true">EVO</span>
+      <h1 class="titlebar__name">Evo IDE <span class="titlebar__ver">6.1</span></h1>
+      <span class="chip chip--model" id="chip-model" title="Active AI model">
+        <span class="dot" id="model-dot"></span>
+        <span id="model-name">connecting…</span>
+      </span>
+      <span class="chip" id="chip-ctx" title="Context window / output reserve">ctx —</span>
+    </div>
+    <div class="titlebar__right">
+      <button class="btn btn--primary" id="btn-run" title="Run active file (Ctrl+Enter)">
+        <svg class="ico"><use href="#i-play"/></svg><span>Run</span>
+      </button>
+      <button class="btn" id="btn-sprint" title="Sprint · autonomous multi-turn session">
+        <svg class="ico"><use href="#i-bolt"/></svg><span>Sprint</span>
+      </button>
+      <button class="btn btn--danger" id="btn-stop" disabled title="Abort the active stream">
+        <svg class="ico"><use href="#i-stop"/></svg><span>Stop</span>
+      </button>
+      <span class="titlebar__sep"></span>
+      <button class="btn btn--ghost" id="toggle-sidebar" title="Toggle file explorer" aria-pressed="true">Explorer</button>
+      <button class="btn btn--ghost" id="toggle-panel" title="Toggle output panel" aria-pressed="true">Panel</button>
+      <button class="btn btn--ghost" id="toggle-inspector" title="Toggle AI console" aria-pressed="true">Console</button>
+    </div>
+  </header>
+
+  <!-- ── Activity rail ────────────────────────────────────── -->
+  <nav class="rail" aria-label="Primary views">
+    <button class="rail__item is-active" data-view="explorer" title="Explorer" aria-label="Explorer">
+      <svg class="ico ico--lg"><use href="#i-files"/></svg>
+    </button>
+    <button class="rail__item" data-view="structure" title="Code structure" aria-label="Structure">
+      <svg class="ico ico--lg"><use href="#i-graph"/></svg>
+    </button>
+    <button class="rail__item" data-view="context" title="Active context" aria-label="Active context">
+      <svg class="ico ico--lg"><use href="#i-pulse"/></svg>
+      <span class="rail__badge" id="rail-ctx-badge" hidden>0</span>
+    </button>
+    <button class="rail__item" data-view="web" title="Web sources" aria-label="Web sources">
+      <svg class="ico ico--lg"><use href="#i-globe"/></svg>
+    </button>
+    <button class="rail__item" data-view="transactions" title="Transaction history" aria-label="Transaction history">
+      <svg class="ico ico--lg"><use href="#i-history"/></svg>
+    </button>
+    <div class="rail__spacer"></div>
+    <button class="rail__item" data-view="settings" title="Settings" aria-label="Settings">
+      <svg class="ico ico--lg"><use href="#i-cog"/></svg>
+    </button>
+  </nav>
+
+  <!-- ── Sidebar ──────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar" aria-label="Sidebar">
+
+    <section class="view is-active" data-view="explorer">
+      <header class="view__head">
+        <h2>Explorer</h2>
+        <div class="view__actions">
+          <button class="iconbtn" id="btn-newfile" title="New file"><svg class="ico"><use href="#i-plus"/></svg></button>
+          <button class="iconbtn" id="btn-reindex" title="Rebuild index"><svg class="ico"><use href="#i-refresh"/></svg></button>
+        </div>
+      </header>
+      <div class="view__body">
+        <ul class="tree" id="file-tree" role="tree" aria-label="Workspace files"></ul>
+        <p class="empty" id="tree-empty" hidden>Your workspace is empty.<br>Click <b>+</b> to create your first file, or scaffold a project below.</p>
+      </div>
+      <footer class="view__foot">
+        <label class="field">
+          <span class="field__label">Start from a template</span>
+          <select id="template-select" class="select">
+            <option value="">Scaffold a project…</option>
+          </select>
+        </label>
+      </footer>
+    </section>
+
+    <section class="view" data-view="structure">
+      <header class="view__head"><h2>Structure</h2>
+        <div class="view__actions">
+          <button class="iconbtn" id="btn-structure-refresh" title="Reload"><svg class="ico"><use href="#i-refresh"/></svg></button>
+        </div>
+      </header>
+      <div class="view__body" id="structure-body">
+        <p class="empty">Open a file to see its classes, functions, and imports.</p>
+      </div>
+    </section>
+
+    <section class="view" data-view="context">
+      <header class="view__head"><h2>Active context</h2></header>
+      <div class="view__body">
+        <div class="tps-metrics" id="budget-list"></div>
+        <h3 class="subhead">Live token velocity</h3>
+        <div class="tps-live">
+          <div class="tps-big" id="tps-display">0.0 <span>tok/s</span></div>
+          <div class="tps-detail">
+            <span>Peak: <b id="tps-peak">0</b></span>
+            <span>Avg: <b id="tps-avg">0</b></span>
+          </div>
+        </div>
+        <h3 class="subhead">Retrieved chunks</h3>
+        <div id="context-chunks"><p class="empty">Send your first prompt to populate retrieval.</p></div>
+      </div>
+    </section>
+
+    <section class="view" data-view="web">
+      <header class="view__head"><h2>Web sources</h2>
+        <div class="view__actions">
+          <button class="iconbtn" id="btn-clear-web" title="Clear cache"><svg class="ico"><use href="#i-trash"/></svg></button>
+        </div>
+      </header>
+      <div class="view__body" id="web-body"><p class="empty">Paste a URL in the prompt to pull live web context.</p></div>
+    </section>
+
+    <section class="view" data-view="transactions">
+      <header class="view__head"><h2>Transaction history</h2>
+        <div class="view__actions">
+          <button class="iconbtn" id="btn-tx-refresh" title="Reload"><svg class="ico"><use href="#i-refresh"/></svg></button>
+        </div>
+      </header>
+      <div class="view__body" id="tx-body"><p class="empty">Every AI-approved change lands here — with one-click revert.</p></div>
+    </section>
+
+    <section class="view" data-view="settings">
+      <header class="view__head"><h2>Settings</h2></header>
+      <div class="view__body">
+        <label class="field">
+          <span class="field__label">Model</span>
+          <select id="model-select" class="select"></select>
+        </label>
+        <label class="field">
+          <span class="field__label">Execution environment</span>
+          <select id="runmode-select" class="select">
+            <option value="system">System python3</option>
+            <option value="sandbox">Sandbox venv</option>
+          </select>
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="opt-autorun">
+          <span>Auto-run after apply</span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="opt-thinking" checked>
+          <span>Stream reasoning (R1 think)</span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="opt-autoapply" checked>
+          <span>Auto-apply file artifacts</span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="opt-follow" checked>
+          <span>Follow streamed code</span>
+        </label>
+        <dl class="kv" id="settings-kv"></dl>
+        <button class="btn btn--wide" id="btn-unload">Unload model from VRAM</button>
+      </div>
+    </section>
+  </aside>
+
+  <!-- ── Workbench ────────────────────────────────────────── -->
+  <main class="workbench" id="workbench">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Open files"></div>
+
+    <div class="editor" id="editor">
+      <div class="editor__scroll" id="editor-scroll">
+        <div class="editor__gutter" id="gutter" aria-hidden="true"></div>
+        <pre id="code-highlight" class="editor__highlight" aria-hidden="true"><code></code></pre>
+        <textarea id="code" class="editor__area" spellcheck="false" autocomplete="off"
+                  autocapitalize="off" wrap="off" aria-label="Code editor"
+                  placeholder="Select a file, or ask the console to generate one."></textarea>
+
+        <!-- Friendly empty-state hint (auto-hidden by CSS when editor has content) -->
+        <div class="editor-hint" id="editor-hint" aria-hidden="true">
+          <div class="editor-hint__icon">
+            <svg><use href="#i-sparkle"/></svg>
+          </div>
+          <h3>Ready when you are.</h3>
+          <p>Open a file from the Explorer, or describe what you want in the console on the right.<br><br>Press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to run · <kbd>Ctrl</kbd>+<kbd>S</kbd> to save</p>
+        </div>
+      </div>
+      <div class="editor__stream" id="stream-overlay" hidden>
+        <div class="editor__streamhead">
+          <span class="dot dot--live"></span>
+          <span id="stream-file">streaming…</span>
+          <span class="mono" id="stream-bytes">0 B</span>
+          <button class="btn btn--ghost btn--xs" id="stream-detach">Detach</button>
+        </div>
+        <pre class="editor__streambody"><code id="stream-code"></code></pre>
+      </div>
+    </div>
+
+    <section class="panel" id="panel" aria-label="Output panel">
+      <header class="panel__head">
+        <div class="panel__tabs" role="tablist">
+          <button class="panel__tab is-active" data-tab="terminal" role="tab">Terminal</button>
+          <button class="panel__tab" data-tab="output" role="tab">Output</button>
+          <button class="panel__tab" data-tab="problems" role="tab">Problems<span class="count" id="problem-count">0</span></button>
+          <button class="panel__tab" data-tab="reasoning" role="tab">Reasoning</button>
+          <button class="panel__tab" data-tab="wire" role="tab">Wire</button>
+        </div>
+        <div class="panel__actions">
+          <button class="iconbtn" id="btn-clear-panel" title="Clear panel"><svg class="ico"><use href="#i-trash"/></svg></button>
+        </div>
+      </header>
+
+      <div class="panel__body is-active" data-tab="terminal">
+        <div class="term" id="term-log"></div>
+        <form class="term__input" id="term-form">
+          <span class="term__prompt">$</span>
+          <input id="term-cmd" autocomplete="off" spellcheck="false" placeholder="python3 main.py" aria-label="Terminal command">
+        </form>
+      </div>
+      <div class="panel__body" data-tab="output"><div class="term" id="output-log"></div></div>
+      <div class="panel__body" data-tab="problems"><div class="problems" id="problems-list"></div></div>
+      <div class="panel__body" data-tab="reasoning"><pre class="term term--wrap"><code id="reasoning-log"></code></pre></div>
+      <div class="panel__body" data-tab="wire"><div class="term" id="wire-log"></div></div>
+    </section>
+  </main>
+
+  <!-- ── Inspector / AI console ───────────────────────────── -->
+  <aside class="inspector" id="inspector" aria-label="AI console">
+
+    <section class="telemetry" id="telemetry">
+      <header class="telemetry__head">
+        <span class="telemetry__title">
+          <span class="dot" id="stream-dot"></span> Telemetry
+        </span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="mono muted" id="tel-state">idle</span>
+          <button class="telemetry__toggle" id="tel-toggle" title="Collapse/Expand telemetry">▼</button>
+        </div>
+      </header>
+
+      <div class="meters">
+        <div class="meter">
+          <div class="meter__row">
+            <span class="meter__label">Velocity</span>
+            <span class="meter__val mono"><b id="tel-tps">0.0</b> tok/s</span>
+          </div>
+          <canvas id="spark" class="spark" width="340" height="38" aria-hidden="true"></canvas>
+          <div class="meter__sub mono">
+            <span>peak <b id="tel-peak">0</b></span>
+            <span>ttft <b id="tel-ttft">—</b></span>
+            <span>avg <b id="tel-avg">0</b></span>
+          </div>
+        </div>
+
+        <div class="meter">
+          <div class="meter__row">
+            <span class="meter__label">Token velocity</span>
+            <span class="meter__val mono"><b id="tel-tokens">0</b> tok/s</span>
+          </div>
+          <div class="tps-bar"><span class="tps-bar__fill" id="bar-tokens" style="width:0%"></span></div>
+          <div class="meter__sub mono">
+            <span>think <b id="tel-think">0</b></span>
+            <span>code <b id="tel-code">0</b></span>
+            <span>elapsed <b id="tel-elapsed">0s</b></span>
+          </div>
+        </div>
+
+        <div class="meter meter--split">
+          <div class="gauge" id="gauge">
+            <svg viewBox="0 0 72 72" class="gauge__svg" aria-hidden="true">
+              <circle class="gauge__track" cx="36" cy="36" r="30"/>
+              <circle class="gauge__value" id="gauge-arc" cx="36" cy="36" r="30"/>
+            </svg>
+            <div class="gauge__center">
+              <b class="mono" id="tel-score">—</b>
+              <small>health</small>
+            </div>
+          </div>
+          <ul class="checks mono" id="checks">
+            <li><span class="tick" data-state="idle"></span>Syntax valid <b id="chk-syntax">—</b></li>
+            <li><span class="tick" data-state="idle"></span>Fences closed <b id="chk-fences">—</b></li>
+            <li><span class="tick" data-state="idle"></span>Frames <b id="chk-frames">0</b></li>
+            <li><span class="tick" data-state="idle"></span>Loss <b id="chk-loss">0</b></li>
+          </ul>
+        </div>
+      </div>
+
+      <ul class="artifacts" id="artifacts"></ul>
+    </section>
+
+    <div class="chat" id="chat" aria-live="polite"></div>
+
+    <form class="composer" id="composer">
+      <div class="composer__attachments" id="composer-attachments" hidden></div>
+      <textarea id="prompt" rows="3" placeholder="What do you want to build? e.g.  “Add a login form to main.py with input validation.”  Paste URLs to include live context."
+                aria-label="Prompt"></textarea>
+      <div class="composer__row">
+        <div class="composer__left">
+          <button type="button" class="iconbtn" id="btn-attach" title="Attach files from sandbox">
+            <svg class="ico"><use href="#i-plus"/></svg>
+          </button>
+          <div class="composer__meta mono muted">
+            <span id="composer-target">main.py</span>
+            <span id="composer-tokens">0 tok</span>
+          </div>
+        </div>
+        <button class="btn btn--primary" type="submit" id="btn-send">
+          <svg class="ico"><use href="#i-send"/></svg><span>Send</span>
+        </button>
+      </div>
+      <div class="attach-menu" id="attach-menu" hidden>
+        <div class="attach-menu__header">Attach files <span class="muted">from sandbox — click to toggle</span></div>
+        <div class="attach-menu__list" id="attach-menu-list"></div>
+      </div>
+    </form>
+  </aside>
+
+  <!-- ── Status bar ───────────────────────────────────────── -->
+  <footer class="statusbar" role="contentinfo">
+    <div class="statusbar__left">
+      <button class="status" id="status-health"><span class="dot" id="health-dot"></span><span id="health-text">checking…</span></button>
+      <span class="status mono" id="status-file">no file</span>
+      <span class="status mono" id="status-sync" title="Auto-sync status">synced</span>
+      <span class="status mono" id="status-pos">Ln 1, Col 1</span>
+      <span class="status mono" id="status-diag">0 problems</span>
+    </div>
+    <div class="statusbar__right">
+      <span class="status mono" id="status-run">system</span>
+      <span class="status mono" id="status-chunks">0 chunks</span>
+      <span class="status mono" id="status-tokens">0 tok</span>
+      <span class="status mono" id="status-saved">$0.00 saved</span>
+    </div>
+  </footer>
+</div>
+
+
+<div class="modal-overlay" id="model-manager-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(4px);">
+  <div class="modal-content" style="width: 90vw; max-width: 1200px; height: 85vh; background: var(--surface); border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); display:flex; flex-direction:column; box-shadow: 0 24px 64px rgba(0,0,0,0.5); animation: toastIn 0.2s ease;">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--line); background:var(--elev);">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="brand-badge" style="font-size: 10px; font-weight: 700; letter-spacing: .12em; color: var(--bg); background: var(--primary); padding: 4px 7px; border-radius: var(--r-sm);">AI</span>
+        <h2 style="font-size:14px; margin:0; font-weight:600;">Model Manager</h2>
+      </div>
+      <button class="iconbtn" id="btn-close-manager" style="width:28px; height:28px; border-radius:var(--r-sm); border:none; background:transparent; color:var(--text-dim); cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">&times;</button>
+    </div>
+    <iframe id="model-manager-frame" src="/ai_model_manager.html" style="flex:1; border:none; width:100%; height:100%;"></iframe>
+  </div>
+</div>
+
+<div class="modal-overlay" id="diff-review-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(4px);">
+  <div class="modal-content diffmodal" style="width: 92vw; max-width: 980px; height: 85vh; background: var(--surface); border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); display:flex; flex-direction:column; box-shadow: 0 24px 64px rgba(0,0,0,0.5); animation: toastIn 0.2s ease;">
+    <div class="diffmodal__head">
+      <div class="diffmodal__title">
+        <span class="brand-badge" style="font-size: 10px; font-weight: 700; letter-spacing: .12em; color: var(--bg); background: var(--primary); padding: 4px 7px; border-radius: var(--r-sm);">DIFF</span>
+        <h2>Review changes</h2>
+        <span class="mono muted" id="diff-tx-id"></span>
+      </div>
+      <div class="diffmodal__actions">
+        <button class="btn btn--ghost btn--xs" id="diff-reject-all">Reject all</button>
+        <button class="btn btn--primary btn--xs" id="diff-apply-all">Apply all</button>
+        <button class="iconbtn" id="diff-close" title="Reject and close">&times;</button>
+      </div>
+    </div>
+    <div class="diffmodal__body" id="diff-file-list"></div>
+    <div class="diffmodal__foot">
+      <span class="mono muted" id="diff-summary"></span>
+      <button class="btn btn--primary" id="diff-commit-selective">Apply selected</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="assertive"></div>
+
+<!-- ── Non-invasive UX helpers (welcome dismissal + hint auto-hide) ── -->
+<script>
+(function () {
+  // Welcome overlay: show only on first visit, dismiss on click / esc / start button
+  var ov = document.getElementById('welcome-overlay');
+  var start = document.getElementById('welcome-start');
+  var skip = document.getElementById('welcome-skip');
+  var KEY = 'evo.welcome.seen.v61';
+
+  function dismiss() {
+    if (!ov) return;
+    ov.classList.add('is-hiding');
+    setTimeout(function(){ ov.style.display = 'none'; }, 320);
+    try { localStorage.setItem(KEY, '1'); } catch(e) {}
+  }
+  try {
+    if (localStorage.getItem(KEY)) {
+      if (ov) ov.style.display = 'none';
+    }
+  } catch(e) {}
+  if (start) start.addEventListener('click', dismiss);
+  if (skip) skip.addEventListener('click', dismiss);
+  if (ov) {
+    ov.addEventListener('click', function(e){ if (e.target === ov) dismiss(); });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && ov.style.display !== 'none') dismiss();
+    });
+  }
+
+  // Editor empty-state hint: hide as soon as there's content or a file is active
+  var hint = document.getElementById('editor-hint');
+  var code = document.getElementById('code');
+  function checkHint() {
+    if (!hint || !code) return;
+    var hasContent = code.value && code.value.length > 0;
+    var hasFile = document.getElementById('status-file');
+    var isNoFile = hasFile && (hasFile.textContent || '').trim() === 'no file';
+    hint.style.display = (!hasContent && isNoFile) ? '' : 'none';
+  }
+  if (code) {
+    code.addEventListener('input', checkHint);
+    code.addEventListener('focus', checkHint);
+  }
+  // Watch status-file for changes (via MutationObserver on textContent)
+  var statusFile = document.getElementById('status-file');
+  if (statusFile && 'MutationObserver' in window) {
+    new MutationObserver(checkHint).observe(statusFile, { childList: true, characterData: true, subtree: true });
+  }
+  // First check after app.js has had a chance to init
+  setTimeout(checkHint, 500);
+  setInterval(checkHint, 2000); // gentle safety net
+})();
+</script>
+
+<script src="/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "llm": {
+    "reasoning": {
+      "tag_open": "<thinking>",
+      "tag_close": "</thinking>"
+    }
+  }
+}

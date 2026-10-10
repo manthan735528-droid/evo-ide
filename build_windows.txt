@@ -1,0 +1,58 @@
+@echo off
+setlocal
+cd /d "%~dp0"
+
+echo ========================================
+echo        EVO IDE - WINDOWS BUILD
+echo ========================================
+
+where py >nul 2>nul
+if %errorlevel%==0 (
+    set "PY=py -3"
+) else (
+    where python >nul 2>nul
+    if %errorlevel%==0 (
+        set "PY=python"
+    ) else (
+        echo ERROR: Python 3 is required to build Evo IDE.
+        pause
+        exit /b 1
+    )
+)
+
+echo [1/4] Installing/updating PyInstaller...
+%PY% -m pip install --upgrade pyinstaller
+if errorlevel 1 goto :fail
+
+echo [2/4] Cleaning previous build...
+if exist build rmdir /s /q build
+if exist dist rmdir /s /q dist
+
+if exist EvoIDE.spec del /q EvoIDE.spec
+copy /y evo_ide.spec EvoIDE.spec >nul
+
+echo [3/4] Building EvoIDE.exe...
+%PY% -m PyInstaller --clean --noconfirm EvoIDE.spec
+if errorlevel 1 goto :fail
+
+if not exist dist\EvoIDE\EvoIDE.exe goto :fail
+
+echo [4/4] Build complete.
+echo.
+echo Output: %cd%\dist\EvoIDE\EvoIDE.exe
+echo.
+echo IMPORTANT:
+echo - HTML/CSS/JS are bundled into the executable build.
+echo - User projects, memory, logs and transactions stay beside the EXE in sandbox\.
+echo - Terminal commands run through Windows CMD via subprocess shell support.
+echo - Python Run requires Python/py on the target machine.
+echo - Ollama must be installed/running separately for local LLM use.
+echo.
+pause
+exit /b 0
+
+:fail
+echo.
+echo BUILD FAILED. Read the error above.
+pause
+exit /b 1
